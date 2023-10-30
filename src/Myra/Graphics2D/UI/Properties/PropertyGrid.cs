@@ -14,8 +14,8 @@ using Myra.Attributes;
 using FontStashSharp;
 using FontStashSharp.RichText;
 using Myra.Graphics2D.Brushes;
-using AssetManagementBase;
 using Myra.Events;
+using Myra.Graphics2D.TextureAtlases;
 
 #if MONOGAME || FNA
 using Microsoft.Xna.Framework;
@@ -1193,7 +1193,7 @@ namespace Myra.Graphics2D.UI.Properties
 				}
 				else if (propertyType == typeof(SpriteFontBase))
 				{
-					valueWidget = CreateFileEditor(record, hasSetter, "*.fnt", name => Settings.AssetManager.LoadFont(name));
+					valueWidget = CreateFileEditor(record, hasSetter, "*.fnt", name => Settings.AssetManager.GetAsset<SpriteFontBase>(name));
 				}
 				else if (propertyType == typeof(IBrush))
 				{
@@ -1201,12 +1201,12 @@ namespace Myra.Graphics2D.UI.Properties
 				}
 				else if (propertyType == typeof(IImage))
 				{
-					valueWidget = CreateFileEditor(record, hasSetter, "*.png|*.jpg|*.bmp|*.gif", name => Settings.AssetManager.LoadTextureRegion(name));
+					valueWidget = CreateFileEditor(record, hasSetter, "*.png|*.jpg|*.bmp|*.gif", name => Settings.AssetManager.GetAsset<TextureRegion>(name));
 				}
 #if !PLATFORM_AGNOSTIC
 				else if (propertyType == typeof(Texture2D))
 				{
-					valueWidget = CreateFileEditor(record, hasSetter, "*.png|*.jpg|*.bmp|*.gif", name => Settings.AssetManager.LoadTexture2D(MyraEnvironment.GraphicsDevice, name));
+					valueWidget = CreateFileEditor(record, hasSetter, "*.png|*.jpg|*.bmp|*.gif", name => Settings.AssetManager.GetAsset<Texture2D>(name));
 				}
 #endif
 				else

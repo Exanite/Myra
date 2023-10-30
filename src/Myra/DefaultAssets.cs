@@ -1,8 +1,9 @@
-﻿using Myra.Graphics2D.TextureAtlases;
+﻿using System;
+using Myra.Graphics2D.TextureAtlases;
 using Myra.Graphics2D.UI.Styles;
 using Myra.Utility;
+using System.Diagnostics;
 using System.IO;
-using AssetManagementBase;
 
 #if MONOGAME || FNA
 using Microsoft.Xna.Framework;
@@ -19,26 +20,32 @@ namespace Myra
 {
 	public static class DefaultAssets
 	{
-		private static AssetManager _assetManager;
+		private static IAssetManager _assetManager;
 		private static TextureRegionAtlas _uiTextureRegionAtlas;
 		private static Stylesheet _uiStylesheet;
 		private static TextureRegion _whiteRegion;
 		private static Texture2D _whiteTexture;
 
-		private static AssetManager AssetManager
-		{
-			get
+		public static IAssetManager AssetManager
+        {
+            get
 			{
-				if (_assetManager == null)
-				{
-					_assetManager = AssetManager.CreateResourceAssetManager(typeof(DefaultAssets).Assembly, "Resources.");
-				}
+                Debug.Assert(_assetManager != null, "DefaultAssets.AssetManager must be set.");
 
-				return _assetManager;
+                return _assetManager;
 			}
-		}
+            set
+            {
+                if (value == null)
+                {
+                    throw new ArgumentNullException(nameof(value));
 
-		public static Texture2D WhiteTexture
+                }
+                _assetManager = value;
+            }
+        }
+
+        public static Texture2D WhiteTexture
 		{
 			get
 			{
@@ -82,7 +89,7 @@ namespace Myra
 					return _uiTextureRegionAtlas;
 				}
 
-				_uiTextureRegionAtlas = AssetManager.LoadTextureRegionAtlas("default_ui_skin.xmat");
+				_uiTextureRegionAtlas = AssetManager.GetAsset<TextureRegionAtlas>("default_ui_skin.xmat");
 				return _uiTextureRegionAtlas;
 			}
 		}
@@ -96,7 +103,7 @@ namespace Myra
 					return _uiStylesheet;
 				}
 
-				_uiStylesheet = AssetManager.LoadStylesheet("default_ui_skin.xmms");
+				_uiStylesheet = AssetManager.GetAsset<Stylesheet>("default_ui_skin.xmms");
 				return _uiStylesheet;
 			}
 		}
@@ -108,13 +115,13 @@ namespace Myra
 		}
 
 		internal static void Dispose()
-		{	
+		{
 			_uiTextureRegionAtlas = null;
 			_uiStylesheet = null;
 
 			if (_assetManager != null)
 			{
-				_assetManager.Cache.Clear();
+				_assetManager.Dispose();
 				_assetManager = null;
 			}
 

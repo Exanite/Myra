@@ -6,7 +6,6 @@ using Myra.Graphics2D.UI;
 using Myra.Graphics2D.Brushes;
 using Myra.Graphics2D.UI.Properties;
 using FontStashSharp.RichText;
-using AssetManagementBase;
 
 #if STRIDE
 using Stride.Core.Mathematics;
@@ -104,7 +103,7 @@ namespace Myra.Graphics2D.UI.File
 			verticalStackPanel1.Widgets.Add(_splitPane);
 			verticalStackPanel1.Widgets.Add(horizontalStackPanel2);
 
-			
+
 			Title = "Open File...";
 			Left = 199;
 			Width = 600;
@@ -112,7 +111,7 @@ namespace Myra.Graphics2D.UI.File
 			Content = verticalStackPanel1;
 		}
 
-		
+
 		public Button _buttonBack;
 		public Button _buttonForward;
 		public TextBox _textFieldPath;

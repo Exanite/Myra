@@ -2,9 +2,9 @@
 using System.Reflection;
 using Myra.Graphics2D.UI.Styles;
 using Myra.Utility;
-using AssetManagementBase;
 using Myra.Graphics2D.UI;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 #if MONOGAME || FNA
 using Microsoft.Xna.Framework;
@@ -77,7 +77,7 @@ namespace Myra
 #endif
 
 		private static MouseCursorType _mouseCursorType;
-		private static AssetManager _defaultAssetManager;
+		private static IAssetManager _defaultAssetManager;
 
 		public static MouseCursorType MouseCursorType
 		{
@@ -196,17 +196,14 @@ namespace Myra
 		/// <summary>
 		/// Default Assets Manager
 		/// </summary>
-		public static AssetManager DefaultAssetManager
+		public static IAssetManager DefaultAssetManager
 		{
 			get
-			{
-				if (_defaultAssetManager == null)
-				{
-					_defaultAssetManager = AssetManager.CreateFileAssetManager(PathUtils.ExecutingAssemblyDirectory);
-				}
+            {
+                Debug.Assert(_defaultAssetManager != null, "MyraEnvironment.DefaultAssetManager must be set.");
 
-				return _defaultAssetManager;
-			}
+                return _defaultAssetManager;
+            }
 
 			set
 			{
@@ -226,7 +223,7 @@ namespace Myra
 		public static bool DisableClipping { get; set; }
 
 		/// <summary>
-		/// Makes the text rendering more smooth(especially when scaling) for the cost of sacrificing some performance 
+		/// Makes the text rendering more smooth(especially when scaling) for the cost of sacrificing some performance
 		/// </summary>
 		public static bool SmoothText { get; set; }
 
@@ -236,7 +233,7 @@ namespace Myra
 		}
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		public static void Reset()
 		{

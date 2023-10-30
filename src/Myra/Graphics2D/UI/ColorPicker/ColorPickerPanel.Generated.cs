@@ -6,7 +6,6 @@ using Myra.Graphics2D.UI;
 using Myra.Graphics2D.Brushes;
 using Myra.Graphics2D.UI.Properties;
 using FontStashSharp.RichText;
-using AssetManagementBase;
 
 #if STRIDE
 using Stride.Core.Mathematics;
@@ -207,7 +206,7 @@ namespace Myra.Graphics2D.UI.ColorPicker
 			_userColors.Padding = new Thickness(4);
 			_userColors.Id = "_userColors";
 
-			
+
 			Spacing = 8;
 			HorizontalAlignment = Myra.Graphics2D.UI.HorizontalAlignment.Center;
 			Width = 450;
@@ -216,7 +215,7 @@ namespace Myra.Graphics2D.UI.ColorPicker
 			Widgets.Add(_userColors);
 		}
 
-		
+
 		public Image _colorWheel;
 		public Image _hsPicker;
 		public Image _gradient;
