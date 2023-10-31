@@ -6,7 +6,6 @@ using Myra.Graphics2D.UI;
 using Myra.Graphics2D.Brushes;
 using Myra.Graphics2D.UI.Properties;
 using FontStashSharp.RichText;
-using AssetManagementBase;
 
 #if STRIDE
 using Stride.Core.Mathematics;
@@ -77,14 +76,14 @@ namespace Myra.Graphics2D.UI
 			Root.Widgets.Add(_checkBoxDisableClipping);
 			Root.Widgets.Add(_checkBoxSmoothText);
 
-			
+
 			Title = "Debug Options";
 			Left = 632;
 			Top = 290;
 			Content = Root;
 		}
 
-		
+
 		public CheckButton _checkBoxWidgetFrames;
 		public CheckButton _checkBoxKeyboardFocusedWidgetFrame;
 		public CheckButton _checkBoxMouseInsideWidgetFrame;
