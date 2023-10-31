@@ -18,15 +18,15 @@ using Color = FontStashSharp.FSColor;
 
 namespace Myra.Utility
 {
-	internal static class Serialization
+	public static class Serialization
 	{
-		public static readonly Dictionary<Type, ITypeSerializer> _serializers = new Dictionary<Type, ITypeSerializer>
+		internal static readonly Dictionary<Type, ITypeSerializer> _serializers = new Dictionary<Type, ITypeSerializer>
 		{
 			{typeof(Vector2), new Vector2Serializer()},
 			{typeof(Thickness), new ThicknessSerializer()},
 		};
 
-		public static bool HasDefaultValue(this PropertyInfo property, object value)
+		internal static bool HasDefaultValue(this PropertyInfo property, object value)
 		{
 			if (property.PropertyType == typeof(Thickness) &&
 				value.Equals(Thickness.Zero))
@@ -45,8 +45,8 @@ namespace Myra.Utility
 					defaultAttributeValue = ColorStorage.FromName(defaultAttributeValue.ToString()).Value;
 				}
 
-				if (property.PropertyType == typeof(string) && 
-					string.IsNullOrEmpty((string)defaultAttributeValue) && 
+				if (property.PropertyType == typeof(string) &&
+					string.IsNullOrEmpty((string)defaultAttributeValue) &&
 					string.IsNullOrEmpty((string)value))
 				{
 					// Skip empty/null string
@@ -60,7 +60,7 @@ namespace Myra.Utility
 				}
 
 				if (defaultAttributeValue != null &&
-					defaultAttributeValue.GetType() == typeof(string) && 
+					defaultAttributeValue.GetType() == typeof(string) &&
 					_serializers.TryGetValue(property.PropertyType, out ITypeSerializer typeSerializer) &&
 					(string)defaultAttributeValue == typeSerializer.Serialize(value))
 				{
