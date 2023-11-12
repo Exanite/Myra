@@ -18,8 +18,12 @@ using MouseCursor = System.Nullable<System.IntPtr>;
 #elif STRIDE
 using Stride.Engine;
 using Stride.Graphics;
+using Stride.Core.Mathematics;
+using Stride.Input;
 #else
 using Myra.Platform;
+using System.Drawing;
+using Color = FontStashSharp.FSColor;
 #endif
 
 namespace Myra
@@ -222,10 +226,33 @@ namespace Myra
 		public static bool DrawTextGlyphsFrames { get; set; }
 		public static bool DisableClipping { get; set; }
 
+		public static Func<MouseInfo> MouseInfoGetter { get; set; } = DefaultMouseInfoGetter;
+		public static Action<bool[]> DownKeysGetter { get; set; } = DefaultDownKeysGetter;
+
+		public static int DoubleClickIntervalInMs { get; set; } = 500;
+		public static int DoubleClickRadius { get; set; } = 2;
+		public static int TooltipDelayInMs { get; set; } = 500;
+		public static Point TooltipOffset { get; set; } = new Point(0, 20);
+		public static Func<Widget, Widget> TooltipCreator { get; set; } = w =>
+		{
+			var tooltip = new Label(null)
+			{
+				Text = w.Tooltip,
+				Tag = w
+			};
+
+			tooltip.ApplyLabelStyle(Stylesheet.Current.TooltipStyle);
+
+			return tooltip;
+		};
+
 		/// <summary>
 		/// Makes the text rendering more smooth(especially when scaling) for the cost of sacrificing some performance
 		/// </summary>
 		public static bool SmoothText { get; set; }
+		public static bool EnableModalDarkening { get; set; }
+
+		public static Color DarkeningColor { get; set; } = new Color(0, 0, 0, 192);
 
 		private static void GameOnDisposed(object sender, EventArgs eventArgs)
 		{
@@ -253,5 +280,55 @@ namespace Myra
 		}
 
 		internal static string InternalClipboard;
+
+		internal static MouseInfo DefaultMouseInfoGetter()
+		{
+#if MONOGAME || FNA
+			var state = Mouse.GetState();
+
+			return new MouseInfo
+			{
+				Position = new Point(state.X, state.Y),
+				IsLeftButtonDown = state.LeftButton == ButtonState.Pressed,
+				IsMiddleButtonDown = state.MiddleButton == ButtonState.Pressed,
+				IsRightButtonDown = state.RightButton == ButtonState.Pressed,
+				Wheel = state.ScrollWheelValue
+			};
+#elif STRIDE
+			var input = Game.Input;
+
+			var v = input.AbsoluteMousePosition;
+
+			return new MouseInfo
+			{
+				Position = new Point((int)v.X, (int)v.Y),
+				IsLeftButtonDown = input.IsMouseButtonDown(MouseButton.Left),
+				IsMiddleButtonDown = input.IsMouseButtonDown(MouseButton.Middle),
+				IsRightButtonDown = input.IsMouseButtonDown(MouseButton.Right),
+				Wheel = input.MouseWheelDelta
+			};
+#else
+			return Platform.GetMouseInfo();
+#endif
+		}
+
+		internal static void DefaultDownKeysGetter(bool[] keys)
+		{
+#if MONOGAME || FNA
+			var state = Keyboard.GetState();
+			for (var i = 0; i < keys.Length; ++i)
+			{
+				keys[i] = state.IsKeyDown((Keys)i);
+			}
+#elif STRIDE
+			var input = Game.Input;
+			for (var i = 0; i < keys.Length; ++i)
+			{
+				keys[i] = input.IsKeyDown((Keys)i);
+			}
+#else
+			Platform.SetKeysDown(keys);
+#endif
+		}
 	}
 }

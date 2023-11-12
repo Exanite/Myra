@@ -19,17 +19,13 @@ using Myra.Platform;
 
 namespace Myra.Graphics2D.UI
 {
-	partial class Widget
+	partial class Widget: IInputEventsProcessor
 	{
-		public const int DoubleClickIntervalInMs = 500;
-		public const int DoubleClickRadius = 2;
-
 		private DateTime? _lastTouchDown;
+		private DateTime? _lastMouseMovement;
 		private Point _lastLocalTouchPosition;
 		private Point? _localMousePosition;
 		private Point? _localTouchPosition;
-		private readonly List<InputEventType> _scheduledInputEvents = new List<InputEventType>();
-		private readonly List<InputEventType> _scheduledInputEventsCopy = new List<InputEventType>();
 
 		[Browsable(false)]
 		[XmlIgnore]
@@ -57,23 +53,15 @@ namespace Myra.Graphics2D.UI
 
 				if (value != null && oldValue == null)
 				{
-					if (MouseCursor != null)
-					{
-						MyraEnvironment.MouseCursorType = MouseCursor.Value;
-					}
-					ScheduleInputEvent(InputEventType.MouseEntered);
+					InputEventsManager.Queue(this, InputEventType.MouseEntered);
 				}
 				else if (value == null && oldValue != null)
 				{
-					if (MouseCursor != null)
-					{
-						MyraEnvironment.MouseCursorType = MyraEnvironment.DefaultMouseCursorType;
-					}
-					ScheduleInputEvent(InputEventType.MouseLeft);
+					InputEventsManager.Queue(this, InputEventType.MouseLeft);
 				}
 				else if (value != null && oldValue != null && value.Value != oldValue.Value)
 				{
-					ScheduleInputEvent(InputEventType.MouseMoved);
+					InputEventsManager.Queue(this, InputEventType.MouseMoved);
 				}
 			}
 		}
@@ -107,34 +95,29 @@ namespace Myra.Graphics2D.UI
 					if (Desktop.PreviousTouchPosition == null)
 					{
 						// Touch Down Event
-						if (Enabled && AcceptsKeyboardFocus)
-						{
-							Desktop.FocusedKeyboardWidget = this;
-						}
-
-						ScheduleInputEvent(InputEventType.TouchDown);
+						InputEventsManager.Queue(this, InputEventType.TouchDown);
 						ProcessDoubleClick(value.Value);
 					}
 					else
 					{
 						// Touch Entered
-						ScheduleInputEvent(InputEventType.TouchEntered);
+						InputEventsManager.Queue(this, InputEventType.TouchEntered);
 					}
 				}
 				else if (value == null && oldValue != null)
 				{
 					if (Desktop.TouchPosition == null)
 					{
-						ScheduleInputEvent(InputEventType.TouchUp);
+						InputEventsManager.Queue(this, InputEventType.TouchUp);
 					}
 					else
 					{
-						ScheduleInputEvent(InputEventType.TouchLeft);
+						InputEventsManager.Queue(this, InputEventType.TouchLeft);
 					}
 				}
 				else if (value != null && oldValue != null && value.Value != oldValue.Value)
 				{
-					ScheduleInputEvent(InputEventType.TouchMoved);
+					InputEventsManager.Queue(this, InputEventType.TouchMoved);
 				}
 			}
 		}
@@ -171,12 +154,12 @@ namespace Myra.Graphics2D.UI
 		private void ProcessDoubleClick(Point touchPos)
 		{
 			if (_lastTouchDown != null &&
-				(DateTime.Now - _lastTouchDown.Value).TotalMilliseconds < DoubleClickIntervalInMs &&
-				Math.Abs(touchPos.X - _lastLocalTouchPosition.X) <= DoubleClickRadius &&
-				Math.Abs(touchPos.Y - _lastLocalTouchPosition.Y) <= DoubleClickRadius)
+				(DateTime.Now - _lastTouchDown.Value).TotalMilliseconds < MyraEnvironment.DoubleClickIntervalInMs &&
+				Math.Abs(touchPos.X - _lastLocalTouchPosition.X) <= MyraEnvironment.DoubleClickRadius &&
+				Math.Abs(touchPos.Y - _lastLocalTouchPosition.Y) <= MyraEnvironment.DoubleClickRadius)
 			{
 				_lastTouchDown = null;
-				ScheduleInputEvent(InputEventType.TouchDoubleClick);
+				InputEventsManager.Queue(this, InputEventType.TouchDoubleClick);
 			}
 			else
 			{
@@ -256,14 +239,14 @@ namespace Myra.Graphics2D.UI
 				{
 					if (!Desktop.IsMobile)
 					{
-						if (IsMouseInside)
+						if (IsMouseInside && !InputFallsThrough(LocalMousePosition.Value))
 						{
 							inputContext.MouseOrTouchHandled = true;
 						}
 					}
 					else
 					{
-						if (IsTouchInside)
+						if (IsTouchInside && !InputFallsThrough(LocalTouchPosition.Value))
 						{
 							inputContext.MouseOrTouchHandled = true;
 						}
@@ -290,77 +273,92 @@ namespace Myra.Graphics2D.UI
 			}
 		}
 
-		internal void ProcessInputEvents()
+		void IInputEventsProcessor.ProcessEvent(InputEventType eventType)
 		{
-			if (_scheduledInputEvents.Count > 0)
-			{
-				_scheduledInputEventsCopy.Clear();
-				_scheduledInputEventsCopy.AddRange(_scheduledInputEvents);
-				_scheduledInputEvents.Clear();
+			// It's important to note that widget should process input events even if Desktop is null
+			// Just add corresponding null checks in that case
 
-				foreach (var inputEvent in _scheduledInputEventsCopy)
-				{
-					switch (inputEvent)
+			switch (eventType)
+			{
+				case InputEventType.MouseLeft:
+					if (Desktop != null && Desktop.Tooltip != null && Desktop.Tooltip.Tag == this)
 					{
-						case InputEventType.MouseLeft:
-							OnMouseLeft();
-							MouseLeft.Invoke(this);
-							break;
-						case InputEventType.MouseEntered:
-							OnMouseEntered();
-							MouseEntered.Invoke(this);
-							break;
-						case InputEventType.MouseMoved:
-							OnMouseMoved();
-							MouseMoved.Invoke(this);
-							break;
-						case InputEventType.MouseWheel:
-							OnMouseWheel(Desktop.MouseWheelDelta);
-							MouseWheelChanged.Invoke(this, Desktop.MouseWheelDelta);
-							break;
-						case InputEventType.TouchLeft:
-							OnTouchLeft();
-							TouchLeft.Invoke(this);
-							break;
-						case InputEventType.TouchEntered:
-							OnTouchEntered();
-							TouchEntered.Invoke(this);
-							break;
-						case InputEventType.TouchMoved:
-							OnTouchMoved();
-							TouchMoved.Invoke(this);
-							break;
-						case InputEventType.TouchDown:
-							if (DragHandle != null && DragHandle.IsTouchInside)
-							{
-								var parent = Parent != null ? (ITransformable)Parent : Desktop;
-								_startPos = parent.ToLocal(new Vector2(Desktop.TouchPosition.Value.X, Desktop.TouchPosition.Value.Y));
-								_startLeftTop = new Point(Left, Top);
-							}
-							OnTouchDown();
-							TouchDown.Invoke(this);
-							break;
-						case InputEventType.TouchUp:
-							OnTouchUp();
-							TouchUp.Invoke(this);
-							break;
-						case InputEventType.TouchDoubleClick:
-							OnTouchDoubleClick();
-							TouchDoubleClick.Invoke(this);
-							break;
+						// Tooltip for this widget is shown
+						Desktop.HideTooltip();
 					}
-				}
-			}
 
-			foreach (var child in ChildrenCopy)
-			{
-				child.ProcessInputEvents();
-			}
-		}
+					_lastMouseMovement = null;
+					if (MouseCursor != null)
+					{
+						MyraEnvironment.MouseCursorType = MyraEnvironment.DefaultMouseCursorType;
+					}
 
-		internal void ScheduleInputEvent(InputEventType inputEvent)
-		{
-			_scheduledInputEvents.Add(inputEvent);
+					OnMouseLeft();
+					MouseLeft.Invoke(this);
+					break;
+				case InputEventType.MouseEntered:
+					_lastMouseMovement = DateTime.Now;
+					if (MouseCursor != null)
+					{
+						MyraEnvironment.MouseCursorType = MouseCursor.Value;
+					}
+
+					OnMouseEntered();
+					MouseEntered.Invoke(this);
+					break;
+				case InputEventType.MouseMoved:
+					_lastMouseMovement = DateTime.Now;
+
+					OnMouseMoved();
+					MouseMoved.Invoke(this);
+					break;
+				case InputEventType.MouseWheel:
+					if (Desktop != null)
+					{
+						OnMouseWheel(Desktop.MouseWheelDelta);
+						MouseWheelChanged.Invoke(this, Desktop.MouseWheelDelta);
+					}
+					break;
+				case InputEventType.TouchLeft:
+					OnTouchLeft();
+					TouchLeft.Invoke(this);
+					break;
+				case InputEventType.TouchEntered:
+					OnTouchEntered();
+					TouchEntered.Invoke(this);
+					break;
+				case InputEventType.TouchMoved:
+					OnTouchMoved();
+					TouchMoved.Invoke(this);
+					break;
+				case InputEventType.TouchDown:
+					if (Desktop != null)
+					{
+						if (Enabled && AcceptsKeyboardFocus)
+						{
+							Desktop.FocusedKeyboardWidget = this;
+						}
+
+						if (DragHandle != null && DragHandle.IsTouchInside)
+						{
+							var parent = Parent != null ? (ITransformable)Parent : Desktop;
+							_startPos = parent.ToLocal(new Vector2(Desktop.TouchPosition.Value.X, Desktop.TouchPosition.Value.Y));
+							_startLeftTop = new Point(Left, Top);
+						}
+					}
+
+					OnTouchDown();
+					TouchDown.Invoke(this);
+					break;
+				case InputEventType.TouchUp:
+					OnTouchUp();
+					TouchUp.Invoke(this);
+					break;
+				case InputEventType.TouchDoubleClick:
+					OnTouchDoubleClick();
+					TouchDoubleClick.Invoke(this);
+					break;
+			}
 		}
 
 		public virtual void OnMouseLeft()

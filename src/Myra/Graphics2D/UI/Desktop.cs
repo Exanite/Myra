@@ -68,6 +68,7 @@ namespace Myra.Graphics2D.UI
 				}
 
 				HideContextMenu();
+				HideTooltip();
 				Widgets.Clear();
 
 				if (value != null)
@@ -113,6 +114,7 @@ namespace Myra.Graphics2D.UI
 		internal Rectangle LayoutBounds => new Rectangle(0, 0, InternalBounds.Width, InternalBounds.Height);
 
 		public Widget ContextMenu { get; private set; }
+		public Widget Tooltip { get; private set; }
 
 		/// <summary>
 		/// Widget having keyboard focus
@@ -308,11 +310,6 @@ namespace Myra.Graphics2D.UI
 			Opacity = 1.0f;
 			Widgets.CollectionChanged += WidgetsOnCollectionChanged;
 
-			MouseInfoGetter = DefaultMouseInfoGetter;
-			DownKeysGetter = DefaultDownKeysGetter;
-
-			KeyDownHandler = OnKeyDown;
-
 #if FNA
 			TextInputEXT.TextInput += OnChar;
 #endif
@@ -335,63 +332,23 @@ namespace Myra.Graphics2D.UI
 
 		private void InputOnTouchDown()
 		{
-			if (ContextMenu == null || ContextMenu.IsTouchInside)
+			if (ContextMenu != null && !ContextMenu.IsTouchInside)
 			{
-				return;
-			}
-
-			var ev = ContextMenuClosing;
-			if (ev != null)
-			{
-				var args = new CancellableEventArgs<Widget>(ContextMenu);
-				ev(null, args);
-
-				if (args.Cancel)
+				var ev = ContextMenuClosing;
+				if (ev != null)
 				{
-					return;
+					var args = new CancellableEventArgs<Widget>(ContextMenu);
+					ev(null, args);
+
+					if (args.Cancel)
+					{
+						return;
+					}
 				}
+				HideContextMenu();
 			}
 
-			HideContextMenu();
-		}
-
-		public void ShowContextMenu(Widget menu, Point position)
-		{
-			HideContextMenu();
-
-			ContextMenu = menu;
-			if (ContextMenu == null)
-			{
-				return;
-			}
-
-			ContextMenu.HorizontalAlignment = HorizontalAlignment.Left;
-			ContextMenu.VerticalAlignment = VerticalAlignment.Top;
-
-			var measure = ContextMenu.Measure(LayoutBounds.Size());
-
-			if (position.X + measure.X > LayoutBounds.Right)
-			{
-				position.X = LayoutBounds.Right - measure.X;
-			}
-
-			if (position.Y + measure.Y > LayoutBounds.Bottom)
-			{
-				position.Y = LayoutBounds.Bottom - measure.Y;
-			}
-
-			ContextMenu.Left = position.X;
-			ContextMenu.Top = position.Y;
-
-			ContextMenu.Visible = true;
-
-			Widgets.Add(ContextMenu);
-
-			if (ContextMenu.AcceptsKeyboardFocus)
-			{
-				_previousKeyboardFocus = FocusedKeyboardWidget;
-				FocusedKeyboardWidget = ContextMenu;
-			}
+			HideTooltip();
 		}
 
 		public void HideContextMenu()
@@ -412,6 +369,82 @@ namespace Myra.Graphics2D.UI
 				FocusedKeyboardWidget = _previousKeyboardFocus;
 				_previousKeyboardFocus = null;
 			}
+		}
+
+		private void FixOverWidgetPosition(Widget widget, Point position)
+		{
+			widget.HorizontalAlignment = HorizontalAlignment.Left;
+			widget.VerticalAlignment = VerticalAlignment.Top;
+
+			var measure = widget.Measure(LayoutBounds.Size());
+
+			if (position.X + measure.X > LayoutBounds.Right)
+			{
+				position.X = LayoutBounds.Right - measure.X;
+			}
+
+			if (position.Y + measure.Y > LayoutBounds.Bottom)
+			{
+				position.Y = LayoutBounds.Bottom - measure.Y;
+			}
+
+			widget.Left = position.X;
+			widget.Top = position.Y;
+		}
+
+		public void ShowContextMenu(Widget menu, Point position)
+		{
+			HideContextMenu();
+
+			ContextMenu = menu;
+			if (ContextMenu == null)
+			{
+				return;
+			}
+
+
+			FixOverWidgetPosition(menu, position);
+
+			ContextMenu.Visible = true;
+			Widgets.Add(ContextMenu);
+
+			if (ContextMenu.AcceptsKeyboardFocus)
+			{
+				_previousKeyboardFocus = FocusedKeyboardWidget;
+				FocusedKeyboardWidget = ContextMenu;
+			}
+		}
+
+		public void HideTooltip()
+		{
+			if (Tooltip == null)
+			{
+				return;
+			}
+
+			Widgets.Remove(Tooltip);
+			Tooltip.Visible = false;
+			Tooltip = null;
+		}
+
+		public void ShowTooltip(Widget widget, Point position)
+		{
+			if (string.IsNullOrEmpty(widget.Tooltip))
+			{
+				return;
+			}
+
+			HideTooltip();
+			Tooltip = MyraEnvironment.TooltipCreator(widget);
+			if (Tooltip == null)
+			{
+				return;
+			}
+
+			FixOverWidgetPosition(Tooltip, position);
+
+			Tooltip.Visible = true;
+			Widgets.Add(Tooltip);
 		}
 
 		private void WidgetsOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs args)
@@ -464,6 +497,12 @@ namespace Myra.Graphics2D.UI
 			{
 				if (widget.Visible)
 				{
+
+					if (MyraEnvironment.EnableModalDarkening && widget.IsModal)
+					{
+						_renderContext.FillRectangle(bounds, MyraEnvironment.DarkeningColor);
+					}
+
 					widget.Render(_renderContext);
 				}
 			}
@@ -494,18 +533,11 @@ namespace Myra.Graphics2D.UI
 			// So scheduling it here
 			if (_inputContext.MouseWheelWidget != null)
 			{
-				_inputContext.MouseWheelWidget.ScheduleInputEvent(InputEventType.MouseWheel);
+				InputEventsManager.Queue(_inputContext.MouseWheelWidget, InputEventType.MouseWheel);
 			}
 
 			// Second input run: process input events
-			ProcessInputEvents();
-
-			childrenCopy = ChildrenCopy;
-			for (var i = childrenCopy.Count - 1; i >= 0; --i)
-			{
-				var widget = childrenCopy[i];
-				widget.ProcessInputEvents();
-			}
+			InputEventsManager.ProcessEvents();
 
 			// Do another layout run, since an input event could cause the layout change
 			UpdateLayout();
@@ -607,7 +639,7 @@ namespace Myra.Graphics2D.UI
 
 		internal void ProcessWidgets(Func<Widget, bool> operation)
 		{
-			foreach(var w in ChildrenCopy)
+			foreach (var w in ChildrenCopy)
 			{
 				var result = w.ProcessWidgets(operation);
 				if (!result)

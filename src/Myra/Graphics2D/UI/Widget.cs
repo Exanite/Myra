@@ -43,7 +43,6 @@ namespace Myra.Graphics2D.UI
 		private int _zIndex;
 		private HorizontalAlignment _horizontalAlignment = HorizontalAlignment.Left;
 		private VerticalAlignment _verticalAlignment = VerticalAlignment.Top;
-		private bool _isModal = false;
 		private bool _measureDirty = true;
 		private bool _arrangeDirty = true;
 		private Desktop _desktop;
@@ -471,6 +470,10 @@ namespace Myra.Graphics2D.UI
 			}
 		}
 
+		[Category("Behavior")]
+		[DefaultValue(null)]
+		public string Tooltip { get; set; }
+
 
 		[Category("Transform")]
 		[DefaultValue("1, 1")]
@@ -564,9 +567,10 @@ namespace Myra.Graphics2D.UI
 					}
 				}
 
-				_desktop = value;
 				LocalMousePosition = null;
 				LocalTouchPosition = null;
+
+				_desktop = value;
 
 				if (_desktop != null)
 				{
@@ -586,21 +590,7 @@ namespace Myra.Graphics2D.UI
 
 		[XmlIgnore]
 		[Browsable(false)]
-		public bool IsModal
-		{
-			get { return _isModal; }
-
-			set
-			{
-				if (_isModal == value)
-				{
-					return;
-				}
-
-				_isModal = value;
-				InvalidateMeasure();
-			}
-		}
+		public bool IsModal { get; set; }
 
 		[Category("Appearance")]
 		[DefaultValue(1.0f)]
@@ -850,6 +840,16 @@ namespace Myra.Graphics2D.UI
 			if (!Visible)
 			{
 				return;
+			}
+
+			if (!string.IsNullOrEmpty(Tooltip) && (Desktop.Tooltip == null || Desktop.Tooltip.Tag != this) &&
+				_lastMouseMovement != null && (DateTime.Now - _lastMouseMovement.Value).TotalMilliseconds > MyraEnvironment.TooltipDelayInMs)
+			{
+				var pos = Desktop.MousePosition;
+				pos.X += MyraEnvironment.TooltipOffset.X;
+				pos.Y += MyraEnvironment.TooltipOffset.Y;
+				Desktop.ShowTooltip(this, pos);
+				_lastMouseMovement = null;
 			}
 
 			UpdateArrange();
@@ -1410,12 +1410,15 @@ namespace Myra.Graphics2D.UI
 				}
 			}
 
-			if (result == null && !this.FallsThrough(p)) 
+			var localPos = ToLocal(p);
+			if (result == null && !InputFallsThrough(localPos)) 
 			{
 				result = this;
 			}
 
 			return result;
 		}
+
+		public virtual bool InputFallsThrough(Point localPos) => false;
 	}
 }

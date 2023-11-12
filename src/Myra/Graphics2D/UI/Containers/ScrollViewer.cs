@@ -572,7 +572,7 @@ namespace Myra.Graphics2D.UI
 					_thumbMaximumY = 1;
 				}
 
-				if (_horizontalScrollingOn && ShowHorizontalScrollBar)
+				if (_horizontalScrollingOn)
 				{
 					bounds.Width = measureSize.X;
 				}
@@ -581,7 +581,7 @@ namespace Myra.Graphics2D.UI
 					bounds.Width = availableSize.X;
 				}
 
-				if (_verticalScrollingOn && ShowVerticalScrollBar)
+				if (_verticalScrollingOn)
 				{
 					bounds.Height = measureSize.Y;
 				}
@@ -642,6 +642,22 @@ namespace Myra.Graphics2D.UI
 		protected override void InternalSetStyle(Stylesheet stylesheet, string name)
 		{
 			ApplyScrollViewerStyle(stylesheet.ScrollViewerStyles.SafelyGetStyle(name));
+		}
+
+		public override bool InputFallsThrough(Point localPos)
+		{
+			if (Background != null)
+			{
+				return false;
+			}
+
+			if (_horizontalScrollingOn && _horizontalScrollbarFrame.Contains(localPos) ||
+				_verticalScrollingOn && _verticalScrollbarFrame.Contains(localPos))
+			{
+				return false;
+			}
+
+			return true;
 		}
 	}
 }
