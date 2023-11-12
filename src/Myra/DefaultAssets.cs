@@ -89,7 +89,7 @@ namespace Myra
 					return _uiTextureRegionAtlas;
 				}
 
-				_uiTextureRegionAtlas = AssetManager.GetAsset<TextureRegionAtlas>("default_ui_skin.xmat");
+				_uiTextureRegionAtlas = AssetManager.GetAsset<TextureRegionAtlas>("Myra:default_ui_skin.xmat");
 				return _uiTextureRegionAtlas;
 			}
 		}
@@ -103,15 +103,9 @@ namespace Myra
 					return _uiStylesheet;
 				}
 
-				_uiStylesheet = AssetManager.GetAsset<Stylesheet>("default_ui_skin.xmms");
+				_uiStylesheet = AssetManager.GetAsset<Stylesheet>("Myra:default_ui_skin.xmms");
 				return _uiStylesheet;
 			}
-		}
-
-		public static Stream OpenDefaultFontDataStream()
-		{
-			var assembly = typeof(DefaultAssets).Assembly;
-			return assembly.OpenResourceStream("Myra.Resources.Inter-Regular.ttf");
 		}
 
 		internal static void Dispose()
