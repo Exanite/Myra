@@ -67,20 +67,24 @@ namespace Myra.Samples.GridContainer
 			}
 
 			// Combo
-			var combo = new ComboBox();
+			var combo = new ComboView();
 			Grid.SetColumn(combo, 1);
 			Grid.SetRow(combo, 1);
 
-			combo.Items.Add(new ListItem("Red", Color.Red));
-			combo.Items.Add(new ListItem("Green", Color.Green));
-			combo.Items.Add(new ListItem("Blue", Color.Blue));
+			combo.Widgets.Add(new Label { Text = "Red", TextColor = Color.Red });
+			combo.Widgets.Add(new Label { Text = "Green", TextColor = Color.Green });
+			combo.Widgets.Add(new Label { Text = "Blue", TextColor = Color.Blue });
+
 			grid.Widgets.Add(combo);
 
 			// Button
-			var button = new ImageTextButton
+			var button = new Button
 			{
 				HorizontalAlignment = HorizontalAlignment.Stretch,
-				Text = "This is 2 columns button"
+				Content = new Label
+				{
+					Text = "This is 2 columns button"
+				}
 			};
 			Grid.SetColumn(button, 2);
 			Grid.SetRow(button, 1);
@@ -120,11 +124,11 @@ namespace Myra.Samples.GridContainer
 			};
 			grid.Widgets.Add(button2);
 
-			var text = @"Lorem ipsum /c[green]dolor sit amet, /c[red]consectetur adipisicing elit," + 
-				@" sed do eiusmod /c[#AAAAAA]tempor incididunt ut labore et dolore magna aliqua. " + 
-				@"Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip " + 
-				@"ex ea commodo consequat. /c[white]Duis aute irure dolor in reprehenderit in voluptate " + 
-				"velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non " + 
+			var text = @"Lorem ipsum /c[green]dolor sit amet, /c[red]consectetur adipisicing elit," +
+				@" sed do eiusmod /c[#AAAAAA]tempor incididunt ut labore et dolore magna aliqua. " +
+				@"Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip " +
+				@"ex ea commodo consequat. /c[white]Duis aute irure dolor in reprehenderit in voluptate " +
+				"velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non " +
 				"proident, sunt in culpa qui officia deserunt mollit anim id est laborum!";
 			var label = new Label
 			{
@@ -147,9 +151,12 @@ namespace Myra.Samples.GridContainer
 				Content = pane
 			};
 
-			var button3 = new ImageTextButton
+			var button3 = new Button
 			{
-				Text = "Show Window",
+				Content = new Label
+				{
+					Text = "Show Window"
+				}
 			};
 			Grid.SetColumn(button3, 4);
 			Grid.SetRow(button3, 3);
@@ -245,13 +252,13 @@ namespace Myra.Samples.GridContainer
 			grid.Widgets.Add(_verticalProgressBar);
 
 			// List box
-			var list = new ListBox();
+			var list = new ListView();
 			Grid.SetColumn(list, 5);
 			Grid.SetRow(list, 4);
 
-			list.Items.Add(new ListItem("Red", Color.Red));
-			list.Items.Add(new ListItem("Green", Color.Green));
-			list.Items.Add(new ListItem("Blue", Color.Blue));
+			list.Widgets.Add(new Label { Text = "Red", TextColor = Color.Red });
+			list.Widgets.Add(new Label { Text = "Green", TextColor = Color.Green });
+			list.Widgets.Add(new Label { Text = "Blue", TextColor = Color.Blue });
 			grid.Widgets.Add(list);
 
 			// Vertical slider

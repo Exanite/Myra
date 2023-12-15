@@ -281,7 +281,7 @@ namespace Myra
 
 		internal static string InternalClipboard;
 
-		internal static MouseInfo DefaultMouseInfoGetter()
+		public static MouseInfo DefaultMouseInfoGetter()
 		{
 #if MONOGAME || FNA
 			var state = Mouse.GetState();
@@ -312,7 +312,7 @@ namespace Myra
 #endif
 		}
 
-		internal static void DefaultDownKeysGetter(bool[] keys)
+		public static void DefaultDownKeysGetter(bool[] keys)
 		{
 #if MONOGAME || FNA
 			var state = Keyboard.GetState();

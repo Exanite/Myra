@@ -1,27 +1,39 @@
-﻿using System.ComponentModel;
-using System.Linq;
-using System.Xml.Serialization;
+﻿using Myra.Attributes;
 using Myra.Graphics2D.UI.Styles;
+using System;
+using System.ComponentModel;
+using System.Xml.Serialization;
 
 namespace Myra.Graphics2D.UI
 {
-	public class RadioButton : ImageTextButton
+	[StyleTypeName("RadioButton")]
+	public class RadioButton : CheckButtonBase
 	{
+		private string _text;
+
+		[Obsolete("Set Content to Label instead")]
 		[Browsable(false)]
 		[XmlIgnore]
-		[Category("Behavior")]
-		[DefaultValue(true)]
-		public override bool Toggleable
+		[Category("Appearance")]
+		public string Text
 		{
-			get
-			{
-				return base.Toggleable;
-			}
+			get => _text;
 			set
 			{
-				base.Toggleable = value;
+				if (_text == value)
+				{
+					return;
+				}
+
+				Content = new Label
+				{
+					Text = value
+				};
+
+				_text = value;
 			}
 		}
+
 
 		public override bool IsPressed
 		{
@@ -59,16 +71,16 @@ namespace Myra.Graphics2D.UI
 			}
 		}
 
-		public RadioButton(string styleName = Stylesheet.DefaultStyleName): base(styleName)
+		public RadioButton(string styleName = Stylesheet.DefaultStyleName)
 		{
-			Toggleable = true;
+			SetStyle(styleName);
 		}
 
 		public override void OnPressedChanged()
 		{
 			base.OnPressedChanged();
 
-			if (!IsPressed)
+			if (Parent == null || !IsPressed)
 			{
 				return;
 			}
@@ -89,7 +101,7 @@ namespace Myra.Graphics2D.UI
 
 		protected override void InternalSetStyle(Stylesheet stylesheet, string name)
 		{
-			ApplyImageTextButtonStyle(stylesheet.RadioButtonStyles.SafelyGetStyle(name));
+			ApplyCheckButtonStyle(stylesheet.RadioButtonStyles.SafelyGetStyle(name));
 		}
 	}
 }

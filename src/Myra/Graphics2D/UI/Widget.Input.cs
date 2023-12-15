@@ -1,6 +1,5 @@
 ﻿using Myra.Utility;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Xml.Serialization;
 using Myra.Events;
@@ -29,7 +28,7 @@ namespace Myra.Graphics2D.UI
 
 		[Browsable(false)]
 		[XmlIgnore]
-		public virtual bool IsMouseInside => _localMousePosition != null;
+		public bool IsMouseInside => _localMousePosition != null;
 
 		[Browsable(false)]
 		[XmlIgnore]

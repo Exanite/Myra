@@ -124,7 +124,7 @@ namespace Myra.Graphics2D.UI
 				{
 					result = PressedBackground;
 				}
-				else if (IsMouseInside && OverBackground != null)
+				else if (UseOverBackground && OverBackground != null)
 				{
 					result = OverBackground;
 				}
@@ -150,6 +150,15 @@ namespace Myra.Graphics2D.UI
 		protected override void InternalSetStyle(Stylesheet stylesheet, string name)
 		{
 			ApplyButtonStyle(stylesheet.ButtonStyles.SafelyGetStyle(name));
+		}
+
+		protected internal override void CopyFrom(Widget w)
+		{
+			base.CopyFrom(w);
+
+			var buttonBase = (ButtonBase2)w;
+			PressedBackground = buttonBase.PressedBackground;
+			IsPressed = buttonBase.IsPressed;
 		}
 	}
 }

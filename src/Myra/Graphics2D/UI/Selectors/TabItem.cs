@@ -18,9 +18,10 @@ namespace Myra.Graphics2D.UI
 {
 	public class TabItem : BaseObject, ISelectorItem, IContent
 	{
+		private Widget _content;
 		private string _text;
 		private Color? _color;
-		private ImageTextButton _button;
+		private ListViewButton _button;
 
 		public string Text
 		{
@@ -65,29 +66,30 @@ namespace Myra.Graphics2D.UI
 		[Content]
 		public Widget Content
 		{
-			get; set;
+			get => _content;
+			set
+			{
+				if (_content == value)
+				{
+					return;
+				}
+
+				_content = value;
+				FireChanged();
+			}
 		}
 
 		[Browsable(false)]
 		[XmlIgnore]
-		public object Tag
-		{
-			get; set;
-		}
+		public object Tag { get; set; }
 
 		[Browsable(false)]
 		[XmlIgnore]
-		public IImage Image
-		{
-			get; set;
-		}
+		public IImage Image { get; set; }
 
 		[Browsable(false)]
 		[XmlIgnore]
-		public int ImageTextSpacing
-		{
-			get; set;
-		}
+		public int ImageTextSpacing { get; set; }
 
 		[DefaultValue(VerticalAlignment.Stretch)]
 
@@ -97,14 +99,11 @@ namespace Myra.Graphics2D.UI
 		} = VerticalAlignment.Stretch;
 
 		[DefaultValue(null)]
-		public int? Height
-		{
-			get; set;
-		}
+		public int? Height { get; set; }
 
 		[Browsable(false)]
 		[XmlIgnore]
-		internal ImageTextButton Button
+		internal ListViewButton Button
 		{
 			get => _button;
 			set
@@ -127,6 +126,18 @@ namespace Myra.Graphics2D.UI
 				}
 			}
 		}
+
+		[Browsable(false)]
+		[XmlIgnore]
+		private HorizontalStackPanel Panel => (HorizontalStackPanel)Button.Content;
+
+		[Browsable(false)]
+		[XmlIgnore]
+		internal Image ImageWidget => (Image)Panel.Widgets[0];
+
+		[Browsable(false)]
+		[XmlIgnore]
+		internal Label LabelWidget => (Label)Panel.Widgets[1];
 
 		[Browsable(false)]
 		[XmlIgnore]
@@ -192,6 +203,26 @@ namespace Myra.Graphics2D.UI
 			{
 				SelectedChanged.Invoke(this);
 			}
+		}
+
+		public TabItem Clone()
+		{
+			var result = new TabItem
+			{
+				Text = Text,
+				Color = Color,
+				Tag = Tag,
+				Image = Image,
+				ImageTextSpacing = ImageTextSpacing,
+				Height = Height
+			};
+
+			if (Content != null)
+			{
+				result.Content = Content.Clone();
+			}
+
+			return result;
 		}
 	}
 }
